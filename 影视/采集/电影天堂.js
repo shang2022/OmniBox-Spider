@@ -1,7 +1,7 @@
 // @name 电影天堂
 // @author 
 // @description 刮削：支持，弹幕：支持，嗅探：支持
-// @version 1.0.2
+// @version 1.0.3
 // @downloadURL https://gh-proxy.org/https://github.com/Silent1566/OmniBox-Spider/raw/refs/heads/main/影视/采集/电影天堂.js
 const OmniBox = require("omnibox_sdk");
 
@@ -96,8 +96,12 @@ async function requestSiteAPI(params = {}) {
     }
     const url = new URL(SITE_API);
     // 添加全局分页限制
-    params.pagesize = PAGE_LIMIT;
-    params.limit = PAGE_LIMIT;
+    if (!params.pagesize) {
+        params.pagesize = PAGE_LIMIT;
+    }
+    if (!params.limit) {
+        params.limit = PAGE_LIMIT;
+    }
     Object.keys(params).forEach((key) => {
         if (params[key] !== undefined && params[key] !== null && params[key] !== "") {
             url.searchParams.append(key, params[key]);
@@ -587,11 +591,16 @@ async function home(params) {
             type_name: config.name,
         }));
 
-        // 首页通常不展示视频列表，或者可以在这里调用 fetchAllMerged 来展示推荐
-        // 为了简单和性能，这里只返回分类
+        const response = await requestSiteAPI({
+            ac: "videolist",
+            pg: "1",
+            pagesize: 100,
+            limit: 100,
+        });
+        const videos = formatVideos(response.list || []);
         return {
             class: classes,
-            list: [], // 或者可以填充一些推荐内容
+            list: videos,
         };
     } catch (error) {
         OmniBox.log("error", `获取首页数据失败: ${error.message}`);
